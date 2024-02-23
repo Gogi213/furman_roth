@@ -42,25 +42,6 @@ def get_fact_data(service, spreadsheet_id):
     fact_data = [row for row in values[1:] if row]
     return fact_data
 
-
-def get_creative_data(service, spreadsheet_id, search_term):
-    range = 'creatives!A:E'  # Диапазон для поиска и извлечения данных
-    result = service.spreadsheets().values().get(spreadsheetId=spreadsheet_id, range=range).execute()
-    values = result.get('values', [])
-
-    # Извлечение данных столбца E, где столбец A совпадает с search_term
-    creative_data = [row[4] for row in values if row and row[0] == search_term]
-    return creative_data
-
-
-def distribute_data_over_month(data):
-    year, month = datetime.now().year, datetime.now().month
-    days_in_month = calendar.monthrange(year, month)[1]
-
-    # Пример распределения данных, можно адаптировать под вашу логику
-    distributed_data = [data for _ in range(days_in_month)]
-    return distributed_data
-
 def get_dates_for_current_month():
     year, month = datetime.now().year, datetime.now().month
     num_days = calendar.monthrange(year, month)[1]
