@@ -4,7 +4,7 @@ from sheets_functions import (
     create_creative_reports_sheets,
     get_fact_data,
     update_creative_sheets_with_dates,
-    get_ad_size_for_campaign  # Убедитесь, что эта функция существует и импортирована
+    get_ad_sizes_for_campaign  # Убедитесь, что эта функция существует и импортирована
 )
 
 def main():
@@ -26,11 +26,9 @@ def main():
     # Получаем данные для каждой уникальной кампании и обновляем соответствующие листы
     for campaign_name in unique_values:
         formatted_sheet_name = f"{campaign_name}_creatives"
-        ad_size = get_ad_size_for_campaign(sheets_service, spreadsheet_id, campaign_name)  # Получаем Ad Size для кампании
-        # Обновляем лист с "_creatives" данными, распределяемыми по дням месяца
-        # Предполагается, что fact_data уже содержит необходимые данные для обновления
-        # Вам нужно будет адаптировать следующий вызов функции в соответствии с вашей реализацией update_creative_sheets_with_dates
-        update_creative_sheets_with_dates(sheets_service, spreadsheet_id, formatted_sheet_name, fact_data, ad_size)
+        # Теперь функция update_creative_sheets_with_dates принимает только 4 аргумента
+        update_creative_sheets_with_dates(sheets_service, spreadsheet_id, formatted_sheet_name, fact_data)
+
 
 if __name__ == '__main__':
     main()

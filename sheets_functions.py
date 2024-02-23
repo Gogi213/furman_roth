@@ -48,51 +48,29 @@ def get_dates_for_current_month():
     return [datetime(year, month, day).strftime("%Y-%m-%d") for day in range(1, num_days + 1)]
 
 
-def update_creative_sheets_with_dates(service, spreadsheet_id, sheet_name, data):
+def update_creative_sheets_with_dates(service, spreadsheet_id, sheet_name, fact_data):
     dates = get_dates_for_current_month()
+    campaign_name = sheet_name.replace('_creatives', '')
+    ad_sizes = get_ad_sizes_for_campaign(service, spreadsheet_id, campaign_name)
 
-    # Предполагаем, что data содержит данные, которые нужно распределить по дням
-    # Равномерное распределение данных по дням (простой пример, можно адаптировать)
-    distributed_data = [data for _ in dates]
+    # Словарь для хранения данных по кампании (ключ - название кампании)
+    campaign_info = {row[0]: row[1:4] for row in fact_data if row[0].startswith(campaign_name)}
 
-    # Формируем значения для обновления
     values = []
-    for date, data in zip(dates, distributed_data):
-        row = [date] + data  # Добавляем дату в начало каждой строки данных
-        values.append(row)
-
-    # Диапазон для обновления, A2 стартует с 2-й строки, так как 1-я для заголовков
-    range = f'{sheet_name}!A2'
-    body = {'values': values}
-
-    # Обновляем лист с "_creatives"
-    result = service.spreadsheets().values().update(
-        spreadsheetId=spreadsheet_id,
-        range=range,
-        valueInputOption="USER_ENTERED",
-        body=body
-    ).execute()
-
-    print(f"{result.get('updatedCells')} cells updated.")
-
-
-def update_creative_sheets_with_dates(service, spreadsheet_id, sheet_name, fact_data, ad_size):
-    dates = get_dates_for_current_month()
-
-    for row in fact_data:
-        # Извлекаем имя кампании и другие данные из строки fact
-        campaign_name, advertiser, campaign, tactic, impressions, clicks = row[:6]
-        ad_size = get_ad_size_for_campaign(service, spreadsheet_id, campaign_name)
-
-        values = []
+    for ad_size in ad_sizes:
+        # Если есть информация о кампании, используем ее, иначе оставляем пустыми
+        advertiser, campaign, tactic = campaign_info.get(campaign_name, ['', '', ''])
         for date in dates:
-            # Формируем строку с добавлением даты и Ad Size
-            values.append([campaign_name, advertiser, campaign, tactic, date, ad_size, impressions, clicks])
+            # Для каждой даты и каждого Ad Size создаем строку с информацией о кампании
+            row = [campaign_name, advertiser, campaign, tactic, date, ad_size, '', '', '', '', '']
+            values.append(row)
 
-        sheet_name = f"{campaign_name}_creatives"  # Формат имени листа
-        range = f"'{sheet_name}'!A2"  # Диапазон обновления, начиная со второй строки
-
+    if values:
+        # Формируем диапазон для обновления, начиная с A2
+        range = f"'{sheet_name}'!A2"
         body = {'values': values}
+
+        # Обновляем лист с "_creatives"
         service.spreadsheets().values().update(
             spreadsheetId=spreadsheet_id,
             range=range,
@@ -100,16 +78,15 @@ def update_creative_sheets_with_dates(service, spreadsheet_id, sheet_name, fact_
             body=body
         ).execute()
 
-        print(f"Data updated for {sheet_name}.")
+        print(f"Data updated for {sheet_name} with multiple Ad Sizes and campaign info.")
 
 
-def get_ad_size_for_campaign(service, spreadsheet_id, campaign_name):
-    range = 'creatives!A:E'  # Предположим, что столбец E содержит Ad Size
+def get_ad_sizes_for_campaign(service, spreadsheet_id, campaign_name):
+    range = 'creatives!A:E'  # Диапазон для поиска Ad Sizes
     result = service.spreadsheets().values().get(spreadsheetId=spreadsheet_id, range=range).execute()
     values = result.get('values', [])
 
-    for row in values:
-        if row[0] == campaign_name:  # Проверяем, соответствует ли значение в столбце A имени кампании
-            return row[4]  # Возвращаем значение из столбца E (Ad Size)
-    return "Unknown"  # Возвращаем "Unknown", если соответствие не найдено
+    ad_sizes = [row[4] for row in values if row[0] == campaign_name]
+    return ad_sizes if ad_sizes else ["Unknown"]
+
 
